@@ -10,6 +10,9 @@ jobs:
       # and pg/mysql2 want system libs on the runner.
       BUNDLE_WITHOUT: db:rubocop:mdl:doc
       MISE_YES: "1"
+      # ponytail: precompiled ruby — no source build, so no ruby-build git clone
+      # and no ssh host-key prompt. Becomes mise's default in 2026.8.0.
+      MISE_RUBY_COMPILE: "false"
     steps:
       - checkout
       - restore_cache:
@@ -19,6 +22,9 @@ jobs:
       - run:
           name: Install mise
           command: |
+            # persistent runner may have no known_hosts; keyscan so any git-over-ssh
+            # fallback can't block on an interactive prompt
+            mkdir -p ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
             command -v mise || curl -fsSL https://mise.run | sh
             echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
             echo 'eval "$(mise activate bash --shims)"' >> "$BASH_ENV"
