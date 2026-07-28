@@ -29,11 +29,14 @@ jobs:
             echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
             echo 'eval "$(mise activate bash --shims)"' >> "$BASH_ENV"
       - run:
-          name: Install build toolchain
+          name: Check build toolchain
           # ponytail: native gems (bigdecimal, nokogiri) need cc even with precompiled ruby.
-          # Guarded so the persistent runner skips apt on every subsequent build.
+          # The runner has no passwordless sudo, so this can only report, not fix:
+          # install build-essential on the runner host once.
           command: |
-            command -v cc || sudo apt-get update && sudo apt-get install -y build-essential
+            command -v cc || { sudo -n apt-get update && sudo -n apt-get install -y build-essential; } || {
+              echo "no C compiler on this runner; install build-essential on the host"; exit 1;
+            }
       - run:
           name: Install Ruby
           command: mise use -g ruby@3.4 && ruby -v
