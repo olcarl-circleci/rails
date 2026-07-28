@@ -1,0 +1,47 @@
+version: 2.1
+
+# ponytail: one job, no matrix — unit tests only, so no DB/redis services needed.
+jobs:
+  test:
+    machine: true
+    resource_class: olcarl-circleci/runnerprov
+    environment:
+      # ponytail: skip db/lint/docs gems — none of the unit suites below need them,
+      # and pg/mysql2 want system libs on the runner.
+      BUNDLE_WITHOUT: db:rubocop:mdl:doc
+      MISE_YES: "1"
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-mise-bundle-{{ checksum "Gemfile.lock" }}
+            - v1-mise-bundle-
+      - run:
+          name: Install mise
+          command: |
+            command -v mise || curl -fsSL https://mise.run | sh
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
+            echo 'eval "$(mise activate bash --shims)"' >> "$BASH_ENV"
+      - run:
+          name: Install Ruby
+          command: mise use -g ruby@3.4 && ruby -v
+      - run:
+          name: Install gems
+          command: gem install bundler && bundle install --jobs 4 --retry 3
+      - save_cache:
+          key: v1-mise-bundle-{{ checksum "Gemfile.lock" }}
+          paths:
+            - ~/.local/share/mise
+            - ~/.bundle
+            - vendor/bundle
+      - run:
+          name: Unit tests
+          command: |
+            for f in activesupport activemodel activejob actionmailer actionview actionpack; do
+              (cd "$f" && bundle exec rake test) || exit 1
+            done
+
+workflows:
+  main:
+    jobs:
+      - test
