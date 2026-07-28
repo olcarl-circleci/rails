@@ -52,9 +52,13 @@ jobs:
       - run:
           name: Unit tests
           command: |
-            for f in activesupport activemodel activejob actionmailer actionview actionpack; do
+            for f in activesupport activemodel actionmailer actionview actionpack; do
               (cd "$f" && bundle exec rake test) || exit 1
             done
+            # ponytail: activejob's default task fans out over 6 queue adapters —
+            # resque/sneakers/backburner/queue_classic need redis/rabbitmq/beanstalkd/pg.
+            # These three run in-process. Add services if you need adapter coverage.
+            (cd activejob && bundle exec rake test:test test:async test:inline) || exit 1
 
 workflows:
   main:
