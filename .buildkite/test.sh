@@ -32,17 +32,10 @@ export PATH="$HOME/.local/bin:$PATH"
 eval "$(mise activate bash --shims)"
 
 echo "--- :wrench: build toolchain"
-# ponytail: gcc for native gems; libxml2-devel + pkg-config for the top-level libxml-ruby
-# gem (nokogiri and sqlite3 ship precompiled, so libxml-ruby is the only gem needing a
-# system lib). sudo -n so a locked-down runner fails fast instead of hanging on a prompt.
-missing=()
-command -v cc >/dev/null || missing+=(gcc gcc-c++ make)
-rpm -q libxml2-devel >/dev/null 2>&1 || missing+=(libxml2-devel pkgconf-pkg-config)
-if [ "${#missing[@]}" -gt 0 ]; then
-  sudo -n dnf -y install "${missing[@]}" || {
-    echo "cannot install ${missing[*]} and no sudo; bake them into the agent AMI"; exit 1;
-  }
-fi
+# ponytail: agents already ship a C compiler (every native gem here built with it) and
+# have no sudo, so there's nothing to install. libxml-ruby — the one gem that needs a
+# system lib (libxml2) — is excluded via the :libxml bundler group instead.
+command -v cc >/dev/null || { echo "no C compiler on agent and no sudo to add one; bake gcc into the AMI"; exit 1; }
 
 echo "--- :ruby: install ruby ${RUBY_VERSION}"
 mise use -g "ruby@${RUBY_VERSION}"
