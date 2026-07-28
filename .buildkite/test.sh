@@ -16,7 +16,9 @@ export BUNDLE_PATH="$PWD/vendor/bundle"
 export MISE_DATA_DIR="$PWD/.mise-data"
 
 lock_sum=$(sha256sum Gemfile.lock | cut -d' ' -f1)
-cache_key="rails/bundle-mise-ruby${RUBY_VERSION}-${lock_sum}.tgz"
+# include the without-groups so changing BUNDLE_WITHOUT busts the cache cleanly
+without_sum=$(printf '%s' "${BUNDLE_WITHOUT:-}" | sha256sum | cut -c1-8)
+cache_key="rails/bundle-mise-ruby${RUBY_VERSION}-${without_sum}-${lock_sum}.tgz"
 cache_uri="s3://${CACHE_BUCKET}/${cache_key}"
 
 echo "--- :package: restore cache ($cache_key)"
@@ -56,6 +58,10 @@ else
 fi
 
 echo "--- :test_tube: unit tests"
+# ponytail: Rails' cache-store tests force-run when ENV["BUILDKITE"] is set (their CI
+# provides redis/memcached); we run neither, so unset it and the tests self-skip via
+# their `skip "... is not up"` guards — exactly how they pass on CircleCI.
+unset BUILDKITE
 for f in activesupport activemodel actionmailer actionview actionpack; do
   (cd "$f" && bundle exec rake test)
 done

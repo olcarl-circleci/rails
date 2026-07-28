@@ -4,7 +4,7 @@ steps:
     agents:
       queue: selfhosted0
     env:
-      BUNDLE_WITHOUT: "db:rubocop:mdl:doc:job:cable"
+      BUNDLE_WITHOUT: "db:rubocop:mdl:doc"
       MISE_YES: "1"
       MISE_RUBY_COMPILE: "false"
       CACHE_BUCKET: "buildkite-cache-725267613767-us-west-2"
