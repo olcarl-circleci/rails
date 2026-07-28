@@ -32,10 +32,10 @@ export PATH="$HOME/.local/bin:$PATH"
 eval "$(mise activate bash --shims)"
 
 echo "--- :wrench: build toolchain"
-# ponytail: agents already ship a C compiler (every native gem here built with it) and
-# have no sudo, so there's nothing to install. libxml-ruby — the one gem that needs a
-# system lib (libxml2) — is excluded via the :libxml bundler group instead.
-command -v cc >/dev/null || { echo "no C compiler on agent and no sudo to add one; bake gcc into the AMI"; exit 1; }
+# ponytail: the custom agent AMI ships cc + libxml2-devel (baked via
+# .buildkite/ami/buildkite-libxml2.pkr.hcl), so every native gem incl. libxml-ruby
+# builds with nothing to install here. Fail clearly if a future AMI drops the compiler.
+command -v cc >/dev/null || { echo "no C compiler on agent; rebake the AMI (.buildkite/ami/)"; exit 1; }
 
 echo "--- :ruby: install ruby ${RUBY_VERSION}"
 mise use -g "ruby@${RUBY_VERSION}"

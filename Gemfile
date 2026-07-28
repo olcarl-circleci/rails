@@ -72,11 +72,7 @@ end
 gem "dalli"
 gem "redis-client", ">= 0.28.0"
 gem "listen", "~> 3.3", require: false
-# Grouped so sudo-less CI agents can skip it: it needs system libxml2 headers they lack,
-# and ActiveSupport's XmlMini falls back to nokogiri/REXML when this backend is absent.
-group :libxml do
-  gem "libxml-ruby", platforms: :ruby
-end
+gem "libxml-ruby", platforms: :ruby
 gem "connection_pool", require: false
 gem "rexml", require: false
 gem "msgpack", ">= 1.7.0", require: false
